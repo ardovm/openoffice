@@ -1773,10 +1773,9 @@ sal_Bool SfxMedium::StorageCommit_Impl()
 								OSL_ENSURE( aName.Len(), "The exception _must_ contain the temporary URL!\n" );
 							}
 						}
-
-						if ( !GetError() )
-        					SetError( ERRCODE_IO_GENERAL, ::rtl::OUString( RTL_CONSTASCII_USTRINGPARAM( OSL_LOG_PREFIX ) ) );
 					}
+					if ( !GetError() )
+						SetError( ERRCODE_IO_GENERAL, ::rtl::OUString( RTL_CONSTASCII_USTRINGPARAM( OSL_LOG_PREFIX ) ) );
 				}
             	catch ( uno::Exception& )
             	{
