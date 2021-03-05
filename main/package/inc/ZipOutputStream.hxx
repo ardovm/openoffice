@@ -38,6 +38,7 @@
 struct ZipEntry;
 class ZipPackageStream;
 
+/** Generator of ZIP compressed archives. */
 class ZipOutputStream
 {
 protected:
@@ -62,6 +63,10 @@ protected:
 	ZipPackageStream*   m_pCurrentStream;
 
 public:
+    /** Constructor
+     *
+     * @exception ::com::sun::star::uno::RuntimeException in case of problems.
+     */
 	ZipOutputStream(
         const ::com::sun::star::uno::Reference< ::com::sun::star::lang::XMultiServiceFactory >& xFactory,
         const ::com::sun::star::uno::Reference< ::com::sun::star::io::XOutputStream > &xOStream );

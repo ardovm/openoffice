@@ -34,37 +34,13 @@
 #include <com/sun/star/packages/zip/ZipConstants.hpp>
 #include <string.h> // for memset
 
+using namespace rtl;
 using namespace com::sun::star::packages::zip::ZipConstants;
 using namespace com::sun::star;
-
-/** Provides general purpose compression using the ZLIB compression
- * library.
- */
 
 Deflater::~Deflater(void)
 {
 	end();	
-}
-void Deflater::init (sal_Int32 nLevelArg, sal_Int32 nStrategyArg, sal_Bool bNowrap)
-{
-	pStream = new z_stream;
-	/* Memset it to 0...sets zalloc/zfree/opaque to NULL */
-	memset (pStream, 0, sizeof(*pStream));
-
-	switch (deflateInit2(pStream, nLevelArg, Z_DEFLATED, bNowrap? -MAX_WBITS : MAX_WBITS,
-				DEF_MEM_LEVEL, nStrategyArg))
-	{
-		case Z_OK:
-			break;
-		case Z_MEM_ERROR:
-			delete pStream;
-			break;
-		case Z_STREAM_ERROR:
-			delete pStream;
-			break;
-		default:
-			 break;
-	}
 }
 
 Deflater::Deflater(sal_Int32 nSetLevel, sal_Bool bNowrap)
@@ -76,7 +52,31 @@ Deflater::Deflater(sal_Int32 nSetLevel, sal_Bool bNowrap)
 , nOffset(0)
 , nLength(0)
 {
-	init(nSetLevel, DEFAULT_STRATEGY, bNowrap);
+	pStream = new z_stream;
+    try {
+        /* Memset it to 0...sets zalloc/zfree/opaque to NULL */
+        memset (pStream, 0, sizeof(*pStream));
+
+        switch (deflateInit2(pStream, nLevel, Z_DEFLATED, bNowrap? -MAX_WBITS : MAX_WBITS,
+                             DEF_MEM_LEVEL, nStrategy)) {
+		case Z_OK:
+			break;
+		case Z_MEM_ERROR:
+            throw uno::RuntimeException(OUString::createFromAscii("zlib: not enough memory"), uno::Reference<uno::XInterface>());
+			break;
+		case Z_STREAM_ERROR:
+            throw uno::RuntimeException(OUString::createFromAscii("zlib: invalid parameter in initialization"), uno::Reference<uno::XInterface>());
+			break;
+		case Z_VERSION_ERROR:
+            throw uno::RuntimeException(OUString::createFromAscii("zlib: invalid version in initialization"), uno::Reference<uno::XInterface>());
+			break;
+		default:
+            throw uno::RuntimeException(OUString::createFromAscii("zlib: unknown error in initialization"), uno::Reference<uno::XInterface>());
+        }
+    } catch (uno::RuntimeException &) {
+        delete pStream;
+        throw;
+    }
 }
 
 sal_Int32 Deflater::doDeflateBytes (uno::Sequence < sal_Int8 > &rBuffer, sal_Int32 nNewOffset, sal_Int32 nNewLength)
@@ -124,6 +124,7 @@ sal_Int32 Deflater::doDeflateBytes (uno::Sequence < sal_Int8 > &rBuffer, sal_Int
 		{
 			case Z_STREAM_END:
 				bFinished = sal_True;
+                /* fall-through */
 			case Z_OK:
 				nOffset += nLength - pStream->avail_in;
 				nLength = pStream->avail_in;
@@ -140,7 +141,11 @@ sal_Int32 Deflater::doDeflateBytes (uno::Sequence < sal_Int8 > &rBuffer, sal_Int
 void SAL_CALL Deflater::setInputSegment( const uno::Sequence< sal_Int8 >& rBuffer, sal_Int32 nNewOffset, sal_Int32 nNewLength ) 
 {
     OSL_ASSERT( !(nNewOffset < 0 || nNewLength < 0 || nNewOffset + nNewLength > rBuffer.getLength()));
-	
+    if ((nNewOffset < 0) || (nNewLength < 0) ||
+        (nNewOffset + nNewLength > rBuffer.getLength())) {
+        throw uno::RuntimeException(OUString::createFromAscii("invalid input segment"), uno::Reference<uno::XInterface>());
+    }
+    
     sInBuffer = rBuffer;
     nOffset = nNewOffset;
     nLength = nNewLength;
@@ -149,7 +154,7 @@ void SAL_CALL Deflater::setLevel( sal_Int32 nNewLevel )
 {
 	if ((nNewLevel < 0 || nNewLevel > 9) && nNewLevel != DEFAULT_COMPRESSION)
 	{
-		// do error handling
+		throw uno::RuntimeException(OUString::createFromAscii("invalid compression level"), uno::Reference<uno::XInterface>());
 	}
 	if (nNewLevel != nLevel)
 	{
@@ -172,6 +177,10 @@ sal_Bool SAL_CALL Deflater::finished(  )
 sal_Int32 SAL_CALL Deflater::doDeflateSegment( uno::Sequence< sal_Int8 >& rBuffer, sal_Int32 nNewOffset, sal_Int32 nNewLength ) 
 {
     OSL_ASSERT( !(nNewOffset < 0 || nNewLength < 0 || nNewOffset + nNewLength > rBuffer.getLength()));
+    if ((nNewOffset < 0) || (nNewLength < 0) ||
+        (nNewOffset + nNewLength > rBuffer.getLength())) {
+        throw uno::RuntimeException(OUString::createFromAscii("invalid input segment"), uno::Reference<uno::XInterface>());
+    }
     return doDeflateBytes(rBuffer, nNewOffset, nNewLength);
 }
 sal_Int32 SAL_CALL Deflater::getTotalIn(  ) 

@@ -1190,13 +1190,13 @@ uno::Reference< io::XInputStream > ZipPackage::writeTempFile()
         xTempIn.set( xTempFile->getInputStream(), UNO_SET_THROW );
     }
     
-    // Hand it to the ZipOutputStream:
-    ZipOutputStream aZipOut( m_xFactory, xTempOut );
-    aZipOut.setMethod( DEFLATED );
-    aZipOut.setLevel( DEFAULT_COMPRESSION );
 
     try
     {
+        // Hand it to the ZipOutputStream:
+        ZipOutputStream aZipOut( m_xFactory, xTempOut );
+        aZipOut.setMethod( DEFLATED );
+        aZipOut.setLevel( DEFAULT_COMPRESSION );
         if ( m_nFormat == embed::StorageFormats::PACKAGE )
         {
             // Remove the old manifest.xml file as the
@@ -1307,7 +1307,7 @@ uno::Reference< io::XInputStream > ZipPackage::writeTempFile()
         if( bUseTemp )
         {
             // no information loss appeares, thus no special handling is required
-               uno::Any aCaught( ::cppu::getCaughtException() );
+            uno::Any aCaught( ::cppu::getCaughtException() );
 
             // it is allowed to throw WrappedTargetException
             WrappedTargetException aException;
