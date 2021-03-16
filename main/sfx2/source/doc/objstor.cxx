@@ -41,6 +41,8 @@
 #include <com/sun/star/document/XInteractionFilterOptions.hpp>
 #include <com/sun/star/task/XInteractionHandler.hpp>
 #include <com/sun/star/task/XInteractionAskLater.hpp>
+#include <com/sun/star/task/XStatusIndicator.hpp>
+#include <com/sun/star/task/XStatusIndicatorFactory.hpp>
 #include <com/sun/star/task/FutureDocumentVersionProductUpdateRequest.hpp>
 #include <com/sun/star/task/InteractionClassification.hpp>
 #include <com/sun/star/lang/XInitialization.hpp>
@@ -1124,7 +1126,7 @@ void Lock_Impl( SfxObjectShell* pDoc, sal_Bool bLock )
 
 sal_Bool SfxObjectShell::SaveTo_Impl
 (
-     SfxMedium &rMedium, // Medium, in das gespeichert werden soll
+     SfxMedium &rMedium, // We need to save into this medium
      const SfxItemSet* pSet
 )
 
@@ -2038,7 +2040,8 @@ sal_Bool SfxObjectShell::DoSaveObjectAs( SfxMedium& rMedium, sal_Bool bCommit )
 // TODO/LATER: may be the call must be removed completelly
 sal_Bool SfxObjectShell::DoSaveAs( SfxMedium& rMedium )
 {
-    // hier kommen nur Root-Storages rein, die via Temp-File gespeichert werden
+    // The only Root-Storage objects that come here are saved by means of a
+    // temporary filehier
     rMedium.CreateTempFileNoCopy();
     SetError(rMedium.GetErrorCode(), ::rtl::OUString( RTL_CONSTASCII_USTRINGPARAM( OSL_LOG_PREFIX ) ) );
     if ( GetError() )
@@ -2640,6 +2643,34 @@ sal_Bool SfxObjectShell::ConvertTo
     return sal_False;
 }
 
+/* FIXME discuss this on the dev ML */
+/** Objects that calls XStatusIndicator::end() in its destructor */
+class StatusIndicatorEnder {
+private:
+    /// Our reference (may not be valid)
+    uno::Reference<task::XStatusIndicator> xStatusIndicator;
+    /// No copy constructor allowed
+    StatusIndicatorEnder(const StatusIndicatorEnder &);
+    /// No assignment allowed
+    const StatusIndicatorEnder& operator=(const StatusIndicatorEnder &);
+public:
+    /** Constructor.
+     *
+     * @param indicator object on which the end() metod must be called.
+     */
+    StatusIndicatorEnder(uno::Reference<task::XStatusIndicator>
+                         indicator): xStatusIndicator(indicator) { }
+    /** Destructor
+     * 
+     * Calls the end() method.
+     */
+    ~StatusIndicatorEnder() {
+        if (xStatusIndicator.is()) {
+            xStatusIndicator->end();
+        }
+    }
+};
+
 //-------------------------------------------------------------------------
 
 sal_Bool SfxObjectShell::DoSave_Impl( const SfxItemSet* pArgs )
@@ -2647,6 +2678,21 @@ sal_Bool SfxObjectShell::DoSave_Impl( const SfxItemSet* pArgs )
     SfxMedium* pRetrMedium = GetMedium();
     const SfxFilter* pFilter = pRetrMedium->GetFilter();
 
+    uno::Reference<task::XStatusIndicator> xStatusIndicator;
+    uno::Reference<frame::XController>
+        xCtrl(GetModel()->getCurrentController());
+    if (xCtrl.is()) {
+        uno::Reference<task::XStatusIndicatorFactory>
+            xStatFactory(xCtrl->getFrame(), uno::UNO_QUERY);
+        if(xStatFactory.is()) {
+            xStatusIndicator = xStatFactory->createStatusIndicator();
+            /* FIXME find a proper message for the status indicator */
+            xStatusIndicator->start(::rtl::OUString::createFromAscii("..."),
+                                    100);
+        }
+    }
+    StatusIndicatorEnder statusIndicatorEnder(xStatusIndicator);
+    
     // copy the original itemset, but remove the "version" item, because pMediumTmp
     // is a new medium "from scratch", so no version should be stored into it
     SfxItemSet* pSet = new SfxAllItemSet(*pRetrMedium->GetItemSet());
@@ -2665,12 +2711,20 @@ sal_Bool SfxObjectShell::DoSave_Impl( const SfxItemSet* pArgs )
         return sal_False;
     }
 
+    if(xStatusIndicator.is()) {
+        xStatusIndicator->setValue(10);
+    }
+    
     // copy version list from "old" medium to target medium, so it can be used on saving
     pMediumTmp->TransferVersionList_Impl( *pRetrMedium );
 /*
     if ( pFilter && ( pFilter->GetFilterFlags() & SFX_FILTER_PACKED ) )
         SetError( GetMedium()->Unpack_Impl( pRetrMedium->GetPhysicalName() ), ::rtl::OUString( RTL_CONSTASCII_USTRINGPARAM( OSL_LOG_PREFIX ) ) );
 */
+
+    if(xStatusIndicator.is()) {
+        xStatusIndicator->setValue(20);
+    }
 
     // an interaction handler here can acquire only in case of GUI Saving
     // and should be removed after the saving is done
@@ -2682,6 +2736,9 @@ sal_Bool SfxObjectShell::DoSave_Impl( const SfxItemSet* pArgs )
     sal_Bool bSaved = sal_False;
     if( !GetError() && SaveTo_Impl( *pMediumTmp, pArgs ) )
     {
+        if(xStatusIndicator.is()) {
+            xStatusIndicator->setValue(80);
+        }
         bSaved = sal_True;
 
         if( pMediumTmp->GetItemSet() )
@@ -2698,6 +2755,10 @@ sal_Bool SfxObjectShell::DoSave_Impl( const SfxItemSet* pArgs )
     }
     else
     {
+        if(xStatusIndicator.is()) {
+            xStatusIndicator->setValue(80);
+        }
+        
         // transfer error code from medium to objectshell
         SetError( pMediumTmp->GetError(), ::rtl::OUString( RTL_CONSTASCII_USTRINGPARAM( OSL_LOG_PREFIX ) ) );
 
@@ -2917,6 +2978,21 @@ sal_Bool SfxObjectShell::PreDoSaveAs_Impl
     SfxItemSet*     pParams
 )
 {
+    uno::Reference<task::XStatusIndicator> xStatusIndicator;
+    uno::Reference<frame::XController>
+        xCtrl(GetModel()->getCurrentController());
+    if (xCtrl.is()) {
+        uno::Reference<task::XStatusIndicatorFactory>
+            xStatFactory(xCtrl->getFrame(), uno::UNO_QUERY);
+        if(xStatFactory.is()) {
+            xStatusIndicator = xStatFactory->createStatusIndicator();
+            /* FIXME find a proper message for the status indicator */
+            xStatusIndicator->start(::rtl::OUString::createFromAscii("..."),
+                                    100);
+        }
+    }
+    StatusIndicatorEnder statusIndicatorEnder(xStatusIndicator);
+    
     // copy all items stored in the itemset of the current medium
     SfxAllItemSet* pMergedParams = new SfxAllItemSet( *pMedium->GetItemSet() );
 
@@ -2991,10 +3067,16 @@ sal_Bool SfxObjectShell::PreDoSaveAs_Impl
     }
 */
     // Save the document ( first as temporary file, then transfer to the target URL by committing the medium )
+    if(xStatusIndicator.is()) {
+        xStatusIndicator->setValue(25);
+    }
     sal_Bool bOk = sal_False;
     if ( !pNewFile->GetErrorCode() && SaveTo_Impl( *pNewFile, NULL ) )
     {
         bOk = sal_True;
+        if(xStatusIndicator.is()) {
+            xStatusIndicator->setValue(50);
+        }
 
         // transfer a possible error from the medium to the document
         SetError( pNewFile->GetErrorCode(), ::rtl::OUString( RTL_CONSTASCII_USTRINGPARAM( OSL_LOG_PREFIX ) ) );
@@ -3006,6 +3088,10 @@ sal_Bool SfxObjectShell::PreDoSaveAs_Impl
         }
         else
             bOk = DoSaveCompleted(0);
+
+        if(xStatusIndicator.is()) {
+            xStatusIndicator->setValue(90);
+        }
 
         if( bOk )
         {
@@ -3038,8 +3124,14 @@ sal_Bool SfxObjectShell::PreDoSaveAs_Impl
     {
         SetError( pNewFile->GetErrorCode(), ::rtl::OUString( RTL_CONSTASCII_USTRINGPARAM( OSL_LOG_PREFIX ) ) );
 
+        if(xStatusIndicator.is()) {
+            xStatusIndicator->setValue(50);
+        }
         // reconnect to the old storage
         DoSaveCompleted( 0 );
+        if(xStatusIndicator.is()) {
+            xStatusIndicator->setValue(90);
+        }
 
         DELETEZ( pNewFile );
     }
