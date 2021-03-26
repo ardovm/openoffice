@@ -570,7 +570,7 @@ sal_uInt16 Writer::GetBookmarks(const SwCntntNode& rNd, xub_StrLen nStt,
 
 ////////////////////////////////////////////////////////////////////////////
 
-// Storage-spezifisches
+// Storage-specific
 
 sal_uLong StgWriter::WriteStream()
 {
@@ -578,16 +578,16 @@ sal_uLong StgWriter::WriteStream()
 	return ERR_SWG_WRITE_ERROR;
 }
 
-sal_uLong StgWriter::Write( SwPaM& rPaM, SvStorage& rStg, const String* pFName )
+sal_uLong StgWriter::Write( SwPaM& rPaM, SotStorage& rStg, const String* pFName )
 {
 	SetStream(0);
 	pStg = &rStg;
 	pDoc = rPaM.GetDoc();
 	pOrigFileName = pFName;
 
-	// PaM kopieren, damit er verändert werden kann
+	// Make a copy of the PaM, so we can alter it safely
 	pCurPam = new SwPaM( *rPaM.End(), *rPaM.Start() );
-	// zum Vergleich auf den akt. Pam sichern
+	// save it so we can compare it with the current PaM
 	pOrigPam = &rPaM;
 
 	sal_uLong nRet = WriteStorage();
@@ -606,9 +606,9 @@ sal_uLong StgWriter::Write( SwPaM& rPaM, const uno::Reference < embed::XStorage 
 	pDoc = rPaM.GetDoc();
 	pOrigFileName = pFName;
 
-	// PaM kopieren, damit er verändert werden kann
+	// Make a copy of the PaM, so we can alter it safely
 	pCurPam = new SwPaM( *rPaM.End(), *rPaM.Start() );
-	// zum Vergleich auf den akt. Pam sichern
+	// save it so we can compare it with the current PaM
 	pOrigPam = &rPaM;
 
 	sal_uLong nRet = pMedium ? WriteMedium( *pMedium ) : WriteStorage();
