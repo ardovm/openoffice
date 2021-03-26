@@ -28,6 +28,7 @@
 
 #include <com/sun/star/uno/Reference.h>
 #include <com/sun/star/embed/XStorage.hpp>
+#include <com/sun/star/task/XStatusIndicator.hpp>
 #include <sfx2/docfile.hxx>
 #include <sfx2/fcontnr.hxx>
 #include <sot/formats.hxx>
@@ -481,8 +482,24 @@ public:
 
 	virtual sal_uLong Write( SwPaM&, SfxMedium&, const String* = 0 );
 			sal_uLong Write( SwPaM&, SvStream&,  const String* = 0 );
-    virtual sal_uLong Write( SwPaM&, const com::sun::star::uno::Reference < com::sun::star::embed::XStorage >&, const String* = 0, SfxMedium* = 0 );
-    virtual sal_uLong Write( SwPaM&, SotStorage&, const String* = 0 );
+    /** Write to a XStorage or SfxMedium.
+     *
+     * @param rPaM current cursor position.
+     * @param rStg XStorage to save into (used if pMedium is NULL).
+     * @param pFName file name.
+     * @param pMedium SfxMedium to save into.
+     *
+     * When pMedium is not NULL, rStg and xStatusIndicator are ignored (the
+     * SfxMedium object carries its own progress indicator).
+     */
+    virtual sal_uLong Write( SwPaM& rPaM, const com::sun::star::uno::Reference < com::sun::star::embed::XStorage >& rStg, const String* pFName = 0, SfxMedium* pMedium = 0 );
+    /** Write into a SotStorage / SvStorage.
+     *
+     * @param rPaM current cursor position.
+     * @param rStg XStorage to save into.
+     * @param pFName file name.
+     */
+    virtual sal_uLong Write( SwPaM& rPaM, SotStorage& rStg, const String* pFName= 0 );
 
 	virtual void SetPasswd( const String& );
 	virtual void SetVersion( const String&, long );
@@ -554,8 +571,15 @@ protected:
 
 	// create error at call
 	virtual sal_uLong WriteStream();
+    /** Write to xStg
+     */
 	virtual sal_uLong WriteStorage() = 0;
-	virtual sal_uLong WriteMedium( SfxMedium& ) = 0;
+    /** Write to xStg
+     *
+     * @param aTargetMedium where to get the document name and the progress
+     * bar from.
+     */
+	virtual sal_uLong WriteMedium( SfxMedium& aTargetMedium) = 0;
 
     using Writer::Write;
 
@@ -564,8 +588,9 @@ public:
 
 	virtual sal_Bool IsStgWriter() const;
 
-    virtual sal_uLong Write( SwPaM&, const com::sun::star::uno::Reference < com::sun::star::embed::XStorage >&, const String* = 0, SfxMedium* = 0 );
-    virtual sal_uLong Write( SwPaM&, SotStorage&, const String* = 0 );
+    virtual sal_uLong Write( SwPaM& rPaM, const com::sun::star::uno::Reference < com::sun::star::embed::XStorage >& rStg, const String* pFName = 0, SfxMedium* pMedium = 0 );
+
+    virtual sal_uLong Write( SwPaM& rPaM, SotStorage& rStg, const String* pFName = 0 );
 
     SotStorage& GetStorage() const       { return *pStg; }
 };

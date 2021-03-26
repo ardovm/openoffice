@@ -40,7 +40,7 @@ namespace com { namespace sun { namespace star {
 	namespace beans { struct PropertyValue; }
 } } }
 
-
+/// Storage-Writer for Writer documents
 class SwXMLWriter : public StgWriter
 {
 	sal_uInt32 _Write( const com::sun::star::uno::Reference < com::sun::star::task::XStatusIndicator>&, const rtl::OUString&  );
@@ -62,26 +62,33 @@ private:
 
 	// helper methods to write XML streams
 
-	/// write a single XML stream into the package
+	/** Write a single XML stream into the package.
+     *
+     * @param xComponent the component we export
+     * @param pStreamName the stream name
+     * @param rFactory service factory for pServiceName
+     * @param pServiceName service name of the component
+     * @param rArguments the argument (XInitialization)
+     * @param rMediaDesc output descriptor
+     * @param bPlainStream if true, neither compress nor encrypt
+     */
 	sal_Bool WriteThroughComponent(
-		/// the component we export
 		const ::com::sun::star::uno::Reference<
 			::com::sun::star::lang::XComponent> & xComponent,
-		const sal_Char* pStreamName,		/// the stream name
-		/// service factory for pServiceName
+		const sal_Char* pStreamName,
 		const ::com::sun::star::uno::Reference<
 			::com::sun::star::lang::XMultiServiceFactory> & rFactory,
-		const sal_Char* pServiceName,		/// service name of the component
-		/// the argument (XInitialization)
+		const sal_Char* pServiceName,
 		const ::com::sun::star::uno::Sequence<
 			::com::sun::star::uno::Any> & rArguments,
-		/// output descriptor
 		const ::com::sun::star::uno::Sequence<
 			::com::sun::star::beans::PropertyValue> & rMediaDesc,
-		sal_Bool bPlainStream );			/// neither compress nor encrypt
+		sal_Bool bPlainStream );
 
-	/// write a single output stream
-	/// (to be called either directly or by WriteThroughComponent(...))
+	/** write a single output stream
+     *
+     * (to be called either directly or by WriteThroughComponent(...))
+     */
 	sal_Bool WriteThroughComponent(
 		const ::com::sun::star::uno::Reference<
 			::com::sun::star::io::XOutputStream> & xOutputStream,

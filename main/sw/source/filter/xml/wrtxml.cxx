@@ -100,7 +100,7 @@ sal_uInt32 SwXMLWriter::_Write( const uno::Reference < task::XStatusIndicator >&
 	SvXMLEmbeddedObjectHelper *pObjectHelper = 0;
 
     ASSERT( xStg.is(), "Where is my storage?" );
-pGraphicHelper = SvXMLGraphicHelper::Create( xStg,
+    pGraphicHelper = SvXMLGraphicHelper::Create( xStg,
 												 GRAPHICHELPER_MODE_WRITE,
 												 sal_False );
 	xGraphicResolver = pGraphicHelper;
@@ -181,9 +181,6 @@ pGraphicHelper = SvXMLGraphicHelper::Create( xStg,
 
 	const OUString sTargetStorage( RTL_CONSTASCII_USTRINGPARAM("TargetStorage") );
 	xInfoSet->setPropertyValue( sTargetStorage, Any( xStg ) );
-
-	// create XStatusIndicator
-//	uno::Reference<task::XStatusIndicator> xStatusIndicator;
 
 	uno::Any aAny;
 	if (bShowProgress)
