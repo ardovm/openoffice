@@ -208,4 +208,13 @@ diff -ru misc/icu/source/tools/genuca/genuca.cpp misc/build/icu/source/tools/gen
        // Now directly handled in the collation code by the swapCJK function. 
        //{0x3400, 0x4DB6, UCOL_SPECIAL_FLAG | (CJK_IMPLICIT_TAG << 24)    },  //3 CJK_IMPLICIT_TAG,   /* 0x3400-0x4DB5*/
        //{0x4E00, 0x9FA6, UCOL_SPECIAL_FLAG | (CJK_IMPLICIT_TAG << 24)    },  //4 CJK_IMPLICIT_TAG,   /* 0x4E00-0x9FA5*/
-Only in misc/build/icu/source/tools/genuca: genuca.cpp.orig
+--- misc/icu/source/test/cintltst/usrchdat.c	2024-10-01 22:48:28.297140700 +0200
++++ misc/build/icu/source/test/cintltst/usrchdat.c	2024-10-05 08:28:33.573790000 +0200
+@@ -16,6 +16,7 @@
+ #define USRCHDAT_C
+ 
+ #include "unicode/ucol.h"
++#include "unicode/usearch.h"
+ 
+ #if !UCONFIG_NO_COLLATION
+ 
