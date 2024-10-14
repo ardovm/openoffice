@@ -1,0 +1,13 @@
+diff -ru misc/icu/source/tools/icupkg/icupkg.cpp misc/build/icu/source/tools/icupkg/icupkg.cpp
+--- misc/icu/source/tools/icupkg/icupkg.cpp	2024-10-14 21:15:43.522763900 +0200
++++ misc/build/icu/source/tools/icupkg/icupkg.cpp	2024-10-14 21:15:51.584859700 +0200
+@@ -405,7 +405,7 @@
+         listPkg=readList(NULL, options[OPT_EXTRACT_LIST].value, FALSE);
+         if(listPkg!=NULL) {
+             pkg->extractItems(destPath, *listPkg, outType);
+-            delete listPkg;
++            // delete listPkg; <----- this crashes under Windows
+         } else {
+             printUsage(pname, FALSE);
+             return U_ILLEGAL_ARGUMENT_ERROR;
+Only in misc/build/icu/source/tools/icupkg: icupkg.cpp~
