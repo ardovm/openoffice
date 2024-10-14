@@ -44,7 +44,7 @@ TARFILE_ROOTDIR=icu
 
 # TODO file icu-mp.patch does not seem to be required
 PATCH_FILES=${TARFILE_NAME}.patch icu-win-layout.patch \
-	icu-format-security.patch
+	icu-format-security.patch icu-win-icupkg-avoid-crash.patch
 
 # ADDITIONAL_FILES=
 
