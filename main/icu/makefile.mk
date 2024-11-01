@@ -49,10 +49,6 @@ PATCH_FILES=${TARFILE_NAME}.patch icu-win-layout.patch \
 PATCH_FILES+=icu-darwin.patch
 .ENDIF
 
-.IF "$(OS)"=="MACOSX"
-PATCH_FILES+=icu-darwin.patch
-.ENDIF
-
 # ADDITIONAL_FILES=
 
 .IF "$(GUI)"=="UNX"
